@@ -60,6 +60,7 @@ load(
     "SWIFT_FEATURE_SYSTEM_MODULE",
     "SWIFT_FEATURE_USE_C_MODULES",
     "SWIFT_FEATURE_USE_GLOBAL_MODULE_CACHE",
+    "SWIFT_FEATURE_USE_TMPDIR_FOR_MODULE_CACHE",
     "SWIFT_FEATURE_VFSOVERLAY",
     "SWIFT_FEATURE__NUM_THREADS_0_IN_SWIFTCOPTS",
     "SWIFT_FEATURE__WMO_IN_SWIFTCOPTS",
@@ -484,7 +485,21 @@ def compile_action_configs(
             ],
             configurators = [_global_module_cache_configurator],
             features = [SWIFT_FEATURE_USE_GLOBAL_MODULE_CACHE],
-            not_features = [SWIFT_FEATURE_USE_C_MODULES],
+            not_features = [
+                SWIFT_FEATURE_USE_C_MODULES,
+                SWIFT_FEATURE_USE_TMPDIR_FOR_MODULE_CACHE,
+            ],
+        ),
+        swift_toolchain_config.action_config(
+            actions = [swift_action_names.COMPILE],
+            configurators = [_use_tmpdir_for_module_cache_configurator],
+            features = [
+                SWIFT_FEATURE_USE_TMPDIR_FOR_MODULE_CACHE,
+            ],
+            not_features = [
+                SWIFT_FEATURE_USE_C_MODULES,
+                SWIFT_FEATURE_USE_GLOBAL_MODULE_CACHE,
+            ],
         ),
         swift_toolchain_config.action_config(
             actions = [
@@ -499,6 +514,7 @@ def compile_action_configs(
             not_features = [
                 [SWIFT_FEATURE_USE_C_MODULES],
                 [SWIFT_FEATURE_USE_GLOBAL_MODULE_CACHE],
+                [SWIFT_FEATURE_USE_TMPDIR_FOR_MODULE_CACHE],
             ],
         ),
         # When using C modules, disable the implicit search for module map files
@@ -941,6 +957,13 @@ def _global_module_cache_configurator(prerequisites, args):
             "-module-cache-path",
             paths.join(prerequisites.bin_dir.path, "_swift_module_cache"),
         )
+
+def _use_tmpdir_for_module_cache_configurator(prerequisites, args):
+    """Adds flags to use a pre-defined module cache path."""
+    args.add(
+        "-module-cache-path",
+        "/private/tmp/__build_bazel_rules_swift_module_cache",
+    )
 
 def _batch_mode_configurator(prerequisites, args):
     """Adds flags to enable batch compilation mode."""
